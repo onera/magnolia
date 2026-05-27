@@ -1,5 +1,3 @@
-.vscode/
-
 c_implementation/build/*
 !c_implementation/build/.gitkeep
 
