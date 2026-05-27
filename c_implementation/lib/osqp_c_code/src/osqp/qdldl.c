@@ -1,4 +1,4 @@
-#include "qdldl.h"
+#include "../../include/qdldl.h"
 
 #define QDLDL_UNKNOWN (-1)
 #define QDLDL_USED (1)

@@ -1,9 +1,9 @@
-#include "osqp.h"
-#include "auxil.h"
-#include "util.h"
-#include "scaling.h"
-#include "glob_opts.h"
-#include "error.h"
+#include "../../include/osqp.h"
+#include "../../include/auxil.h"
+#include "../../include/util.h"
+#include "../../include/scaling.h"
+#include "../../include/glob_opts.h"
+#include "../../include/error.h"
 
 
 /**********************

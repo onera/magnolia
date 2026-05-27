@@ -4,8 +4,8 @@
  * This file contains the workspace variables needed by OSQP.
  */
 
-#include "types.h"
-#include "qdldl_interface.h"
+#include "../../include/types.h"
+#include "../../include/qdldl_interface.h"
 
 // Define data structure
 c_int Pdata_i[372] = {

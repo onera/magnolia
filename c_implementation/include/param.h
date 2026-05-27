@@ -1,6 +1,8 @@
 #ifndef PARAM_H
 #define PARAM_H
 
+#include <string.h>
+
 typedef struct {
     // Physical parameters
     double g;
