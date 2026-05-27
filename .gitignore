@@ -1,0 +1,9 @@
+.vscode/
+
+c_implementation/build/*
+!c_implementation/build/.gitkeep
+
+*.o
+*.obj
+*.exe
+*.out
