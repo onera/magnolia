@@ -1,2 +1,2 @@
 # magnolia
-Multi-rate Architecture for Guided Navigation and Open-source Loop-Interference Analysis
+Multi-rate Architecture for Guidance and Navigation, an Open-source LIbrary Application
