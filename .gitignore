@@ -1,7 +1,9 @@
 c_implementation/build/*
 !c_implementation/build/.gitkeep
 
-*.o
-*.obj
-*.exe
-*.out
+matlab/slprj
+matlab/__pycache__
+matlab/*.asv
+matlab/*.mexw64
+matlab/*.slxc
+matlab/osqp_c_code/build
