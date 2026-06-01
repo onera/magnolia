@@ -16,4 +16,4 @@ void mahony_wrapper_step(double* gyro_meas, double* acc_meas, double* mag_meas,
                           double* p_ddot_hat, double* eta_hat, double* omega_hat,
                           MahonyState* state, Param* param);
 
-#endif
+#endif // MAHONY_WRAPPER_H

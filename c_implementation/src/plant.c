@@ -1,4 +1,4 @@
-#include "../include/plant.h"
+#include "plant.h"
 
 void plant_update(double* X, double* v, double* X_dot, Param* param) {
     // X = [x y z phi theta psi x_dot y_dot z_dot p q r]

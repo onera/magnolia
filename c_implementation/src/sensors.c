@@ -26,7 +26,7 @@ void sensors_accelerometer(double* X_dot, double* X, double* acc_meas, Param* pa
     for (int i = 0; i < 3; i++) {
         acc_meas[i] = R_B[0][i] * X_dot[6] 
                     + R_B[1][i] * X_dot[7] 
-                    + R_B[2][i] * (X_dot[8] - param->g);
+                    + R_B[2][i] * (X_dot[8] + param->g);
                     
         acc_meas[i] += param->b_acc + generate_gaussian_noise(param->sigma_acc, param->f_acc);
     }

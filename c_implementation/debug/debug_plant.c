@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
-#include "../include/param.h"
-#include "../include/plant.h"
+#include "param.h"
+#include "plant.h"
 
 static int double_equal(double a, double b, double tolerance) {
     return fabs(a - b) <= tolerance;

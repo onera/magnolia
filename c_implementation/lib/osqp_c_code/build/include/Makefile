@@ -56,10 +56,10 @@ RM = C:\Strawberry\c\bin\cmake.exe -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = C:\Users\thoma\Desktop\ONERA\V6\osqp_c_code
+CMAKE_SOURCE_DIR = C:\Users\thoma\Desktop\ONERA\MAGNOLIA\matlab\osqp_c_code
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = C:\Users\thoma\Desktop\ONERA\V6\osqp_c_code\build
+CMAKE_BINARY_DIR = C:\Users\thoma\Desktop\ONERA\MAGNOLIA\matlab\osqp_c_code\build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -86,14 +86,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /d C:\Users\thoma\Desktop\ONERA\V6\osqp_c_code\build && $(CMAKE_COMMAND) -E cmake_progress_start C:\Users\thoma\Desktop\ONERA\V6\osqp_c_code\build\CMakeFiles C:\Users\thoma\Desktop\ONERA\V6\osqp_c_code\build\include\\CMakeFiles\progress.marks
-	cd /d C:\Users\thoma\Desktop\ONERA\V6\osqp_c_code\build && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 include/all
-	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\thoma\Desktop\ONERA\V6\osqp_c_code\build\CMakeFiles 0
+	cd /d C:\Users\thoma\Desktop\ONERA\MAGNOLIA\matlab\osqp_c_code\build && $(CMAKE_COMMAND) -E cmake_progress_start C:\Users\thoma\Desktop\ONERA\MAGNOLIA\matlab\osqp_c_code\build\CMakeFiles C:\Users\thoma\Desktop\ONERA\MAGNOLIA\matlab\osqp_c_code\build\include\\CMakeFiles\progress.marks
+	cd /d C:\Users\thoma\Desktop\ONERA\MAGNOLIA\matlab\osqp_c_code\build && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 include/all
+	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\thoma\Desktop\ONERA\MAGNOLIA\matlab\osqp_c_code\build\CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /d C:\Users\thoma\Desktop\ONERA\V6\osqp_c_code\build && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 include/clean
+	cd /d C:\Users\thoma\Desktop\ONERA\MAGNOLIA\matlab\osqp_c_code\build && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 include/clean
 .PHONY : clean
 
 # The main clean target
@@ -102,17 +102,17 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /d C:\Users\thoma\Desktop\ONERA\V6\osqp_c_code\build && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 include/preinstall
+	cd /d C:\Users\thoma\Desktop\ONERA\MAGNOLIA\matlab\osqp_c_code\build && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 include/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /d C:\Users\thoma\Desktop\ONERA\V6\osqp_c_code\build && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 include/preinstall
+	cd /d C:\Users\thoma\Desktop\ONERA\MAGNOLIA\matlab\osqp_c_code\build && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 include/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /d C:\Users\thoma\Desktop\ONERA\V6\osqp_c_code\build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 1
+	cd /d C:\Users\thoma\Desktop\ONERA\MAGNOLIA\matlab\osqp_c_code\build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 1
 .PHONY : depend
 
 # Help Target
@@ -134,6 +134,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /d C:\Users\thoma\Desktop\ONERA\V6\osqp_c_code\build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 0
+	cd /d C:\Users\thoma\Desktop\ONERA\MAGNOLIA\matlab\osqp_c_code\build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

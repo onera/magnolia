@@ -1,9 +1,8 @@
-#include "../include/lqi.h"
+#include "lqi.h"
 
 void lqi_init(LQIState* state) {
     for (int i = 0; i < 3; i++) {
         state->epsilon[i] = 0.0;
-        state->error_old[i] = 0.0;
     }
 }
 
@@ -12,13 +11,12 @@ void lqi_update(double* X, double* eta_ref, double* tau, LQIState* state, Param*
     double dt = 1.0 / param->f_lqi;
     double error_now[3];
 
-    error_now[0] = X[3] - eta_ref[0]; 
-    error_now[1] = X[4] - eta_ref[1]; 
-    error_now[2] = X[5] - eta_ref[2]; 
+    error_now[0] = eta_ref[0] - X[3]; 
+    error_now[1] = eta_ref[1] - X[4]; 
+    error_now[2] = eta_ref[2] - X[5]; 
 
     for (int i = 0; i < 3; i++) {
-        state->epsilon[i] += (dt / 2.0) * (error_now[i] + state->error_old[i]);
-        state->error_old[i] = error_now[i];
+        state->epsilon[i] += dt * error_now[i];
     }
 
     double X_aug[9];

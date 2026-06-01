@@ -3,7 +3,6 @@
 
 double generate_gaussian_noise(double sigma, double f_sampling) {
     double pi = 3.141592653589793;
-    double sigma_discret = sigma * sqrt(f_sampling);
 
     double u1 = (double)rand() / RAND_MAX;
     double u2 = (double)rand() / RAND_MAX;
@@ -12,5 +11,5 @@ double generate_gaussian_noise(double sigma, double f_sampling) {
     
     double z0 = sqrt(-2.0 * log(u1)) * cos(2.0 * pi * u2);
     
-    return z0 * sigma_discret;
+    return z0 * sigma;
 }

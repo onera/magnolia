@@ -1,4 +1,4 @@
-#include "../include/kalman.h"
+#include "kalman.h"
 #include <math.h>
 
 void kalman_init(KalmanState* state, Param* param) {
@@ -38,11 +38,14 @@ void kalman_update(double* u, double* Y_meas, double* acc_meas, double* X_hat, K
     for (i = 0; i < 3; i++)  Y[i + 9] = acc_kalman[i];
 
     double Y_hat[12] = {0.0};
-    for (i = 0; i < 12; i++) {
-        for (j = 0; j < 15; j++) {
-            Y_hat[i] += state->X_hat[j];
-        }
+    for (i = 0; i < 3; i++) {
+        Y_hat[i] = state->X_hat[i];
+        Y_hat[i+3] = state->X_hat[i+3];
+        Y_hat[i+6] = state->X_hat[i+9];
     }
+    Y_hat[9]  = state->X_hat[12] - param->g * state->X_hat[4];
+    Y_hat[10] = state->X_hat[13] + param->g * state->X_hat[3];
+    Y_hat[11] = state->X_hat[14];
 
     double innovation[12];
     for (i = 0; i < 12; i++) {

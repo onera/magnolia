@@ -1,4 +1,4 @@
-#include "../../include/lin_alg.h"
+#include "lin_alg.h"
 
 
 /* VECTOR FUNCTIONS ----------------------------------------------------------*/

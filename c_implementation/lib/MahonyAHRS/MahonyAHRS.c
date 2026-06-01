@@ -29,7 +29,7 @@
 //---------------------------------------------------------------------------------------------------
 // Variable definitions
 
-volatile float sampleFreq = f_mahony;											// sample frequency in Hz
+volatile float sampleFreq = f_mahony;										// sample frequency in Hz
 volatile float twoKp = twoKpDef;											// 2 * proportional gain (Kp)
 volatile float twoKi = twoKiDef;											// 2 * integral gain (Ki)
 volatile float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;					// quaternion of sensor frame relative to auxiliary frame

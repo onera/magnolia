@@ -25,8 +25,8 @@ N = length(t);
 
 % Constant reference trajectory at [3, 3, 3] meters
 X_ref = ones(p.Np + 1, N) * 3;
-Y_ref = ones(p.Np + 1, N) * 3;
-Z_ref = ones(p.Np + 1, N) * 3;
+Y_ref = ones(p.Np + 1, N) * 0;
+Z_ref = ones(p.Np + 1, N) * 0;
 
 ref_matrix = zeros(3, p.Np + 1, N);
 ref_matrix(1, :, :) = X_ref;
@@ -42,10 +42,10 @@ clear N ref_matrix t X_ref Y_ref Z_ref;
 fprintf('[done]\n')
 
 %% 4. Building osqp
-%build_osqp_solver();
+build_osqp_solver();
 
 %% 5. Run Simulink Model
-fprintf('Starting Simulink simulation (modele_V6)...\n');
+fprintf('Starting Simulink simulation...\n');
 simOut = sim('modele_V6', 'StopTime', num2str(T_SIM));
 fprintf('Simulation finished successfully!\n');
 

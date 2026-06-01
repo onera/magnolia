@@ -1,4 +1,4 @@
-#include "../include/mahony_wrapper.h"
+#include "mahony_wrapper.h"
 #include "../lib/MahonyAHRS/MahonyAHRS.h" 
 #include <math.h> 
 
@@ -30,16 +30,16 @@ void mahony_wrapper_step(double* gyro_meas, double* acc_meas, double* mag_meas,
     double ctheta = cos(theta); double stheta = sin(theta); 
     double cpsi = cos(psi);   double spsi = sin(psi); 
 
-    double R_B_T[3][3] = { 
-        {ctheta*cpsi,                          ctheta*spsi,                          -stheta}, 
-        {sphi*stheta*cpsi - cphi*spsi,         sphi*stheta*spsi + cphi*cpsi,         sphi*ctheta}, 
-        {cphi*stheta*cpsi + sphi*spsi,         cphi*stheta*spsi - sphi*cpsi,         cphi*ctheta} 
-    }; 
+    double R_B[3][3] = {
+        {ctheta*cpsi,  sphi*stheta*cpsi - cphi*spsi,  cphi*stheta*cpsi + sphi*spsi},
+        {ctheta*spsi,  sphi*stheta*spsi + cphi*cpsi,  cphi*stheta*spsi - sphi*cpsi},
+        {-stheta,      sphi*ctheta,                   cphi*ctheta}
+    };
 
     double acc_hat_B[3] = {0.0}; 
     for(int i = 0; i < 3; i++) { 
-        acc_hat_B[i] = R_B_T[i][0]*p_ddot_hat[0] + R_B_T[i][1]*p_ddot_hat[1] + R_B_T[i][2]*p_ddot_hat[2]; 
-    } 
+        acc_hat_B[i] = R_B[0][i]*p_ddot_hat[0] + R_B[1][i]*p_ddot_hat[1] + R_B[2][i]*p_ddot_hat[2]; 
+    }
 
     float ax_pure = (float)(acc_meas[0] - acc_hat_B[0]); 
     float ay_pure = (float)(acc_meas[1] - acc_hat_B[1]); 

@@ -12,4 +12,4 @@ typedef struct {
 void motors_init(MotorsState* state, Param* param);
 void motors_update(double* u, double* v, MotorsState* state, Param* param);
 
-#endif // ifndef MOTORS_H
+#endif // MOTORS_H

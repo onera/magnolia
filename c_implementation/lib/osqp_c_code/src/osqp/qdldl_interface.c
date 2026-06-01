@@ -1,7 +1,7 @@
-#include "../../include/glob_opts.h"
+#include "glob_opts.h"
 
-#include "../../include/qdldl.h"
-#include "../../include/qdldl_interface.h"
+#include "qdldl.h"
+#include "qdldl_interface.h"
 
 
 // Permute x = P*b using P

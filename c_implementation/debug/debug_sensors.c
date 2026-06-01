@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
-#include "../include/param.h"
+#include "param.h"
 #include "../include/sensors.h"
 
 static int double_equal(double a, double b, double tolerance) {

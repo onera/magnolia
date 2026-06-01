@@ -1,4 +1,4 @@
-#include "../../include/error.h"
+#include "error.h"
 
 const char *OSQP_ERROR_MESSAGE[] = {
   "Problem data validation.",

@@ -2,11 +2,11 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Run All Tests",
+            "label": "Run All Debugs",
             "type": "shell",
             "command": "wsl",
             "args": [
-                "bash", "c_implementation/tests/run_tests.sh"
+                "bash", "c_implementation/debug/run_debug.sh"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"

@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
-#include "../include/param.h"
-#include "../include/mahony_wrapper.h"
+#include "param.h"
+#include "mahony_wrapper.h"
 
 int main() {
     Param param;

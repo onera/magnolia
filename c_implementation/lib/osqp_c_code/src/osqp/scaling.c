@@ -1,4 +1,4 @@
-#include "../../include/scaling.h"
+#include "scaling.h"
 
 
 c_int unscale_data(OSQPWorkspace *work) {

@@ -1,11 +1,11 @@
-#include "../include/motors.h"
+#include "motors.h"
 #include <math.h>
 
 void motors_init(MotorsState* state, Param* param) {
     state->A = exp(-1/(param->f_plant*param->tau_m));
     state->B = 1 - state->A;
     for (int i = 0; i < 4; i++) {
-        state->Ti_v[i] = 0;
+        state->Ti_v[i] = (param->m * param->g) / 4.0;
     }
 }
 
