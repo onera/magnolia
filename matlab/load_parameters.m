@@ -99,4 +99,12 @@ function p = load_parameters()
     p.tau_m = 0.03; 
     p.M_T_u = [1 1 1 1; p.L -p.L -p.L p.L; -p.L -p.L p.L p.L; p.ci -p.ci p.ci -p.ci];
     p.M_u_T = inv(p.M_T_u);
+
+
+    % NO NOISE %
+
+    p.sigma_p   = 0.0; 
+    p.sigma_omega = 0.0; 
+    p.sigma_acc   = 0.0; 
+    p.sigma_mag   = 0.0;
 end

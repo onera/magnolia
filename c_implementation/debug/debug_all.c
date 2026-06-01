@@ -68,57 +68,43 @@ int main(void) {
     }
     fprintf(log_file, "time,ref_x,ref_y,ref_z,x,y,z,est_x,est_y,est_z,phi,theta,psi,est_phi,est_theta,est_psi,dx,dy,dz,est_dx,est_dy,est_dz,p,q,r,est_p,est_q,est_r,ref_phi,ref_theta,ref_psi,cmd_T,cmd_tau_phi,cmd_tau_theta,cmd_tau_psi,real_T,real_tau_phi,real_tau_theta,real_tau_psi\n");
 
-    printf(">>> Starting Simulation <<<\n");
+    u[0] = param.m_tilde * param.g; 
+    u[1] = 0.0;
+    u[2] = 0.0;
+    u[3] = 0.0;
+
+    memset(kalman_state.X_hat, 0, sizeof(kalman_state.X_hat));
+
+    printf(">>> Starting Simulation (Strict User Order) <<<\n");
 
     while (sim_time < max_sim_time) {
-        
-        int stride = param.Np + 1;
-        for (int k = 0; k <= param.Np; k++) {
-            X_ref_horizon[0 * stride + k] = 3.0;
-            X_ref_horizon[1 * stride + k] = 0.0;
-            X_ref_horizon[2 * stride + k] = 0.0;
+
+        motors_update(u, v, &motors_state, &param);
+
+        plant_update(X, v, X_dot, &param);
+
+        if (loop_counter % (unsigned int)(param.f_plant / param.f_mpc) == 0) {
+            double X_est_mpc[6] = {
+                kalman_state.X_hat[0], kalman_state.X_hat[1], kalman_state.X_hat[2],
+                kalman_state.X_hat[6], kalman_state.X_hat[7], kalman_state.X_hat[8]  
+            };
+            int stride = param.Np + 1;
+            for (int k = 0; k <= param.Np; k++) {
+                X_ref_horizon[0 * stride + k] = 3.0;
+                X_ref_horizon[1 * stride + k] = 0.0;
+                X_ref_horizon[2 * stride + k] = 0.0;
+            }
+            mpc_wrapper_step(X_est_mpc, X_ref_horizon, U_mpc_optimal, &mpc_state, &param);
         }
 
         sensors_gyrometer(X, gyro_meas, &param);
-        sensors_accelerometer(X_dot, X, acc_meas, &param);
 
-        if (loop_counter % (unsigned int)(param.f_plant / param.f_mag) == 0) {
-            sensors_magnetometer(X, mag_meas, &param);
-        }
+        sensors_accelerometer(X_dot, X, acc_meas, &param);
 
         p_ddot_hat[0] = kalman_state.X_hat[12]; 
         p_ddot_hat[1] = kalman_state.X_hat[13]; 
         p_ddot_hat[2] = kalman_state.X_hat[14]; 
         mahony_wrapper_step(gyro_meas, acc_meas, mag_meas, p_ddot_hat, eta_hat, omega_hat, &mahony_state, &param);
-
-        if (loop_counter % (unsigned int)(param.f_plant / param.f_kalman) == 0) {
-            sensors_mocap(X, mocap_meas, &sensors_state, &param);
-
-            double Y_meas[9];
-            Y_meas[0] = mocap_meas[0]; 
-            Y_meas[1] = mocap_meas[1];
-            Y_meas[2] = mocap_meas[2];
-            Y_meas[3] = eta_hat[0];    
-            Y_meas[4] = eta_hat[1];
-            Y_meas[5] = eta_hat[2];
-            Y_meas[6] = omega_hat[0];  
-            Y_meas[7] = omega_hat[1];
-            Y_meas[8] = omega_hat[2];
-
-            kalman_update(u, Y_meas, acc_meas, kalman_state.X_hat, &kalman_state, &param);
-        }
-
-        if (loop_counter % (unsigned int)(param.f_plant / param.f_mpc) == 0) {
-            double X_est_mpc[6] = {
-            kalman_state.X_hat[0], 
-            kalman_state.X_hat[1],
-            kalman_state.X_hat[2],
-            kalman_state.X_hat[6], 
-            kalman_state.X_hat[7], 
-            kalman_state.X_hat[8]  
-            };
-            mpc_wrapper_step(X_est_mpc, X_ref_horizon, U_mpc_optimal, &mpc_state, &param);
-        }
 
         if (loop_counter % (unsigned int)(param.f_plant / param.f_lqi) == 0) {
             u[0] = U_mpc_optimal[0] + (param.m * param.g); 
@@ -126,20 +112,12 @@ int main(void) {
             eta_ref[1] = U_mpc_optimal[2]; 
             eta_ref[2] = 0.0;              
 
-            double X_for_lqi[12];
-            X_for_lqi[0]  = kalman_state.X_hat[0];  
-            X_for_lqi[1]  = kalman_state.X_hat[1];  
-            X_for_lqi[2]  = kalman_state.X_hat[2];  
-            X_for_lqi[3]  = eta_hat[0];             
-            X_for_lqi[4]  = eta_hat[1];             
-            X_for_lqi[5]  = eta_hat[2];             
-            X_for_lqi[6]  = kalman_state.X_hat[6];  
-            X_for_lqi[7]  = kalman_state.X_hat[7];  
-            X_for_lqi[8]  = kalman_state.X_hat[8];  
-            X_for_lqi[9]  = omega_hat[0];           
-            X_for_lqi[10] = omega_hat[1];           
-            X_for_lqi[11] = omega_hat[2];           
-
+            double X_for_lqi[12] = {
+                kalman_state.X_hat[0],  kalman_state.X_hat[1],  kalman_state.X_hat[2],  
+                eta_hat[0],             eta_hat[1],             eta_hat[2],             
+                kalman_state.X_hat[6],  kalman_state.X_hat[7],  kalman_state.X_hat[8],  
+                omega_hat[0],           omega_hat[1],           omega_hat[2]            
+            };
             double tau_control[3] = {0.0};
             lqi_update(X_for_lqi, eta_ref, tau_control, &lqi_state, &param);
 
@@ -148,9 +126,24 @@ int main(void) {
             u[3] = tau_control[2]; 
         }
 
-        motors_update(u, v, &motors_state, &param);
-        plant_update(X, v, X_dot, &param);
+        if (loop_counter % (unsigned int)(param.f_plant / param.f_kalman) == 0) {
+            sensors_mocap(X, mocap_meas, &sensors_state, &param);
+        }
 
+        if (loop_counter % (unsigned int)(param.f_plant / param.f_mag) == 0) {
+            sensors_magnetometer(X, mag_meas, &param);
+        }
+
+        if (loop_counter % (unsigned int)(param.f_plant / param.f_kalman) == 0) {
+            double Y_meas[9] = {
+                mocap_meas[0], mocap_meas[1], mocap_meas[2],
+                eta_hat[0],    eta_hat[1],    eta_hat[2],
+                omega_hat[0],  omega_hat[1],  omega_hat[2]
+            };
+            kalman_update(u, Y_meas, acc_meas, kalman_state.X_hat, &kalman_state, &param);
+        }
+
+        int stride = param.Np + 1;
         fprintf(log_file, "%.4f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f\n",
                 sim_time, 
                 X_ref_horizon[0], X_ref_horizon[stride], X_ref_horizon[2 * stride],

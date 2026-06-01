@@ -7,3 +7,4 @@ matlab/*.asv
 matlab/*.mexw64
 matlab/*.slxc
 matlab/osqp_c_code/build
+matlab/*.autosave

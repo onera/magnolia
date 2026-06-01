@@ -5,6 +5,7 @@ try rmdir('slprj', 's'); catch; end
 %% 1. Load Parameters
 fprintf('Loading system parameters...\t\t\t\t\t');
 p = load_parameters();
+
 fprintf('[done]\n')
 
 %% 2. Design Controllers and Estimators
