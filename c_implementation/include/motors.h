@@ -10,6 +10,7 @@ typedef struct {
 } MotorsState;
 
 void motors_init(MotorsState* state, Param* param);
-void motors_update(double* u, double* v, MotorsState* state, Param* param);
+void motors_outputs(double* v, MotorsState* state, Param* param);
+void motors_update(double* u, MotorsState* state, Param* param);
 
 #endif // MOTORS_H
