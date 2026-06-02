@@ -1,12 +1,19 @@
 #include "plant.h"
 
-void plant_update(double* X, double* v, double* X_dot, Param* param) {
+void plant_outputs(double* X, double* X_dot, PlantState* state) {
+    for (int i = 0; i < 12; i++) {
+        X[i] = state->X[i];
+        X_dot[i] = state->X_dot[i];
+    }
+}
+
+void plant_update(double* v, Param* param, PlantState* state) {
     // X = [x y z phi theta psi x_dot y_dot z_dot p q r]
     // v = [T tau_phi tau_theta tau_psi]
 
-    double eta[3] = {X[3], X[4], X[5]};
-    double p_dot[3] = {X[6], X[7], X[8]};
-    double omega[3] = {X[9], X[10], X[11]};
+    double eta[3] = {state->X[3], state->X[4], state->X[5]};
+    double p_dot[3] = {state->X[6], state->X[7], state->X[8]};
+    double omega[3] = {state->X[9], state->X[10], state->X[11]};
     double phi = eta[0];
     double theta = eta[1];
     double psi = eta[2];
@@ -52,13 +59,13 @@ void plant_update(double* X, double* v, double* X_dot, Param* param) {
     B[11][3] = 1 / param->Iz;
 
     for (int i = 0; i < 12; i++) {
-        X_dot[i] = A[i];
-        for (int j = 0; j < 4; j++) {
-            X_dot[i] += B[i][j] * v[j];
-        }
+        state->X[i] += state->X_dot[i] / param->f_plant;
     }
 
     for (int i = 0; i < 12; i++) {
-        X[i] += X_dot[i] / param->f_plant;
+        state->X_dot[i] = A[i];
+        for (int j = 0; j < 4; j++) {
+            state->X_dot[i] += B[i][j] * v[j];
+        }
     }
 }

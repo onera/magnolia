@@ -4,6 +4,12 @@
 #include "param.h"
 #include <math.h>
 
-void plant_update(double* X, double* v, double* X_dot, Param* param);
+typedef struct {
+    double X[12];
+    double X_dot[12];
+} PlantState;
+
+void plant_outputs(double* X, double* X_dot, PlantState* state);
+void plant_update(double* v, Param* param, PlantState* state);
 
 #endif // PLANT_H
