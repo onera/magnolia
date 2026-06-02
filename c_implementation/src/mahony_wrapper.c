@@ -11,20 +11,29 @@ void mahony_wrapper_init(MahonyState* state) {
     state->integralFBy = 0.0f; 
     state->integralFBz = 0.0f; 
 
-    state->gyro_smoothed_prev[0] = 0.0; 
-    state->gyro_smoothed_prev[1] = 0.0; 
-    state->gyro_smoothed_prev[2] = 0.0; 
+    for (int i = 0; i < 3; i++) { 
+        state->gyro_smoothed_prev[i] = 0.0;
+    }
+
+    for (int i = 0; i < 3; i++) { 
+        state->eta_hat[i] = 0.0; 
+    }
+}
+
+void mahony_wrapper_outputs(double* eta_hat, double* omega_hat, MahonyState* state) {
+    for (int i = 0; i < 3; i++) { 
+        eta_hat[i] = state->eta_hat[i]; 
+        omega_hat[i] = state->gyro_smoothed_prev[i]; 
+    }
 }
 
 void mahony_wrapper_step(double* gyro_meas, double* acc_meas, double* mag_meas, 
-                          double* p_ddot_hat, double* eta_hat, double* omega_hat,
-                          MahonyState* state, Param* param) {
-
+                          double* p_ddot_hat, MahonyState* state, Param* param) {
     double pi = 3.141592653589793; 
     
-    double phi   = eta_hat[0]; 
-    double theta = eta_hat[1]; 
-    double psi   = eta_hat[2]; 
+    double phi   = state->eta_hat[0]; 
+    double theta = state->eta_hat[1]; 
+    double psi   = state->eta_hat[2]; 
 
     double cphi = cos(phi);   double sphi = sin(phi); 
     double ctheta = cos(theta); double stheta = sin(theta); 
@@ -61,9 +70,9 @@ void mahony_wrapper_step(double* gyro_meas, double* acc_meas, double* mag_meas,
 
     float roll, pitch, yaw; 
     getEulerAngles(&roll, &pitch, &yaw); 
-    eta_hat[0] = (double)roll; 
-    eta_hat[1] = (double)pitch; 
-    eta_hat[2] = (double)yaw; 
+    state->eta_hat[0] = (double)roll; 
+    state->eta_hat[1] = (double)pitch; 
+    state->eta_hat[2] = (double)yaw; 
 
     float bx, by, bz; 
     MahonyAHRSgetBias(&bx, &by, &bz); 
@@ -82,6 +91,7 @@ void mahony_wrapper_step(double* gyro_meas, double* acc_meas, double* mag_meas,
     gyro_unbiased[1] = gyro_meas[1] + (double)by; 
     gyro_unbiased[2] = gyro_meas[2] + (double)bz; 
 
+    double omega_hat[3];
     for (int i = 0; i < 3; i++) { 
         omega_hat[i] = alpha * gyro_unbiased[i] + (1.0 - alpha) * state->gyro_smoothed_prev[i]; 
         state->gyro_smoothed_prev[i] = omega_hat[i]; 
