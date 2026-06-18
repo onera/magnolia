@@ -6,10 +6,10 @@
 
 typedef struct {
     double X[12];
-    double X_dot[12];
 } PlantState;
 
-void plant_outputs(double* X, double* X_dot, PlantState* state);
-void plant_update(double* v, Param* param, PlantState* state);
+void plant_init(PlantState* state, Param* param);
+void plant_outputs(double* v, double* X, double* X_dot, Param* param, PlantState* state);
+void plant_update(double* X_dot, Param* param, PlantState* state);
 
 #endif // PLANT_H

@@ -123,7 +123,7 @@ def step_checker(x, t, ref, threshold, variable):
     s_error_validation = str(s_error<requirements['step'][variable]['R4']['value']).upper()
 
     print(f"{float(t[-1])}s step response properties for a step of {float(ref)}\n")
-    print(f"{"CRITERE":^20} | {"VALEUR":^10} | {"VALIDATION":^12}")
+    print(f"{"NAME":^20} | {"VALUE":^10} | {"STATUS":^12}")
     print('-' * 48)
     print(f"{s_time_criteria:20} | {float(s_time):>7.3f} s  | {s_time_validation:^12}")
     print(f"{r_time_criteria:20} | {float(r_time):>7.3f} s  | {r_time_validation:^12}")
@@ -159,7 +159,7 @@ def trajectory_checker(x, ref, variable):
     rmse_validation = str(rmse<requirements['trajectory'][variable]['R1']['value']).upper()
     max_error_validation = str(max_error<requirements['trajectory'][variable]['R2']['value']).upper()
 
-    print(f"{"CRITERE":^20} | {"VALEUR":^10} | {"VALIDATION":^12}")
+    print(f"{"NAME":^20} | {"VALUE":^10} | {"STATUS":^12}")
     print('-' * 48)
     print(f"{rmse_criteria:20} | {rmse:>7.3f}    | {rmse_validation:^12}")
     print(f"{max_error_criteria:20} | {max_error:>7.3f}    | {max_error_validation:^12}")
@@ -190,7 +190,7 @@ def plot_sim_results(csv_filepath="c_implementation/debug/sim_log.csv"):
     fig_dash.canvas.manager.set_window_title('Dashboard: Control & Estimation Overview')
     
     for ax in axs.flat:
-        ax.set_facecolor('#1e1e1e') 
+        ax.set_facecolor("#ffffff") 
         ax.grid(True)
         ax.tick_params(colors='black')
 
@@ -282,10 +282,10 @@ def plot_sim_results(csv_filepath="c_implementation/debug/sim_log.csv"):
     plt.plot(df['time'], df['y'], '-', linewidth=2.0, label='Real y')
     plt.plot(df['time'], df['z'], '-', linewidth=2.0, label='Real z')
     plt.grid(True)
-    plt.ylabel('Position [m]')
-    plt.xlabel('Time [s]')
-    plt.title('Position Tracking (x, y, z)')
-    plt.legend(loc='upper left', ncol=3, frameon=False)
+    plt.title('Position Tracking (x, y, z)', fontsize=16, fontweight='bold', pad=15)
+    plt.ylabel('Position [m]', fontsize=14, fontweight='bold')
+    plt.xlabel('Time [s]', fontsize=14, fontweight='bold')
+    plt.legend(loc='upper left', ncol=9, frameon=False)
     
     # 2.2 Velocity 
     plt.figure('Velocity', figsize=(12, 6))

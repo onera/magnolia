@@ -42,7 +42,7 @@ void load_param(Param* param) {
     memcpy(param->U_min, export_U_min, sizeof(export_U_min));
     memcpy(param->Q_mpc, export_Q_mpc, sizeof(export_Q_mpc));
     memcpy(param->Q_Terminal, export_Q_Terminal, sizeof(export_Q_Terminal));
-    param->Wterminal = 1.0;
+    param->Wterminal = PARAM_W_TERMINAL;
 
     param->sigma_pos = PARAM_SIGMA_POS;
     param->latency_MoCap = PARAM_LATENCY_MOCAP;

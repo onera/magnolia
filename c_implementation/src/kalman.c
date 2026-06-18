@@ -2,19 +2,14 @@
 #include <math.h>
 
 void kalman_init(KalmanState* state, Param* param) {
-    for (int i = 0; i < 4; i++) {
-        state->U_kalman[i] = 0.0;
-    }
-
-    for (int i = 0; i < 15; i++) {
-        state->X_hat[i] = 0.0;
-    }
+    memset(state->U_kalman, 0, sizeof(state->U_kalman));
+    memset(state->X_hat, 0, sizeof(state->X_hat));
 
     state->A_u = exp(-1.0 / (param->f_kalman * param->tau_m));
     state->B_u = 1.0 - state->A_u;
 }
 
-void kalman_outputs(KalmanState* state, double* X_hat) {
+void kalman_outputs(double* X_hat, KalmanState* state) {
     for (int i = 0; i < 15; i++) {
         X_hat[i] = state->X_hat[i];
     }
@@ -25,7 +20,6 @@ void kalman_update(double* u, double* Y_meas, double* acc_meas, KalmanState* sta
     acc_kalman[0] = acc_meas[0];
     acc_kalman[1] = acc_meas[1];
     acc_kalman[2] = acc_meas[2] - param->g;
-
 
     double Y[12];
     for (int i = 0; i < 9; i++)  Y[i] = Y_meas[i];

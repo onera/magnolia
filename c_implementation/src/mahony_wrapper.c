@@ -15,25 +15,17 @@ void mahony_wrapper_init(MahonyState* state) {
         state->gyro_smoothed_prev[i] = 0.0;
     }
 
-    for (int i = 0; i < 3; i++) { 
-        state->eta_hat[i] = 0.0; 
-    }
+    memset(state->eta_hat_prev, 0, sizeof(state->eta_hat_prev));
 }
 
-void mahony_wrapper_outputs(double* eta_hat, double* omega_hat, MahonyState* state) {
-    for (int i = 0; i < 3; i++) { 
-        eta_hat[i] = state->eta_hat[i]; 
-        omega_hat[i] = state->gyro_smoothed_prev[i]; 
-    }
-}
+void mahony_wrapper_outputs(double* gyro_meas, double* acc_meas, double* mag_meas, double* p_ddot_hat, 
+                            double* eta_hat, double* omega_hat, MahonyState* state, Param* param) {
 
-void mahony_wrapper_step(double* gyro_meas, double* acc_meas, double* mag_meas, 
-                          double* p_ddot_hat, MahonyState* state, Param* param) {
     double pi = 3.141592653589793; 
     
-    double phi   = state->eta_hat[0]; 
-    double theta = state->eta_hat[1]; 
-    double psi   = state->eta_hat[2]; 
+    double phi   = state->eta_hat_prev[0]; 
+    double theta = state->eta_hat_prev[1]; 
+    double psi   = state->eta_hat_prev[2]; 
 
     double cphi = cos(phi);   double sphi = sin(phi); 
     double ctheta = cos(theta); double stheta = sin(theta); 
@@ -70,30 +62,35 @@ void mahony_wrapper_step(double* gyro_meas, double* acc_meas, double* mag_meas,
 
     float roll, pitch, yaw; 
     getEulerAngles(&roll, &pitch, &yaw); 
-    state->eta_hat[0] = (double)roll; 
-    state->eta_hat[1] = (double)pitch; 
-    state->eta_hat[2] = (double)yaw; 
+    state->eta_hat_prev[0] = (double)roll; 
+    state->eta_hat_prev[1] = (double)pitch; 
+    state->eta_hat_prev[2] = (double)yaw; 
+    eta_hat[0] = (double)roll;
+    eta_hat[1] = (double)pitch;
+    eta_hat[2] = (double)yaw;
 
-    float bx, by, bz; 
-    MahonyAHRSgetBias(&bx, &by, &bz); 
+    float bx_new, by_new, bz_new; 
+    MahonyAHRSgetBias(&bx_new, &by_new, &bz_new); 
 
     state->q0 = q0; state->q1 = q1; state->q2 = q2; state->q3 = q3; 
-    state->integralFBx = integralFBx; 
-    state->integralFBy = integralFBy; 
-    state->integralFBz = integralFBz; 
+    state->integralFBx = bx_new; 
+    state->integralFBy = by_new; 
+    state->integralFBz = bz_new; 
 
-    double tau = 1.0 / (2.0 * pi * param->f_c_gyro); 
-    double Ts = 1.0 / param->f_gyro; 
-    double alpha = Ts / (tau + Ts); 
+    double gyro_filtered[3] = {0.0};
+    double tau_f = 1.0 / (2.0 * pi * param->f_c_gyro);
+    double Ts = 1.0 / param->f_gyro;
 
-    double gyro_unbiased[3]; 
-    gyro_unbiased[0] = gyro_meas[0] + (double)bx; 
-    gyro_unbiased[1] = gyro_meas[1] + (double)by; 
-    gyro_unbiased[2] = gyro_meas[2] + (double)bz; 
+    double b0 = Ts / (tau_f + Ts);
+    double a1 = 1.0 - b0;
 
-    double omega_hat[3];
-    for (int i = 0; i < 3; i++) { 
-        omega_hat[i] = alpha * gyro_unbiased[i] + (1.0 - alpha) * state->gyro_smoothed_prev[i]; 
-        state->gyro_smoothed_prev[i] = omega_hat[i]; 
-    } 
+    for (int i = 0; i < 3; i++) {
+        double w_k = gyro_meas[i] + a1 * state->gyro_smoothed_prev[i];
+        gyro_filtered[i] = b0 * w_k;
+        state->gyro_smoothed_prev[i] = w_k;
+    }
+
+    omega_hat[0] = gyro_filtered[0] + (double)bx_new;
+    omega_hat[1] = gyro_filtered[1] + (double)by_new;
+    omega_hat[2] = gyro_filtered[2] + (double)bz_new;
 }

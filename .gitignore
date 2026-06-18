@@ -8,3 +8,5 @@ matlab/*.mexw64
 matlab/*.slxc
 matlab/osqp_c_code/build
 matlab/*.autosave
+matlab/modele_V6_grt_rtw
+matlab/*.bak
