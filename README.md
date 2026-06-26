@@ -4,12 +4,9 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-<div style="margin: 0; padding: 0; line-height: 1.1;">
-  <font size="10"><strong>MAGNOLIA</strong></font>
-</div>
-<div style="margin: 0; padding: 0;">
-  <font size="8"><strong>Multi-rate Architecture for Guidance and Navigation, an Open-source Library Application</strong></font>
-</div>
+
+# MAGNOLIA
+## Multi-rate Architecture for Guidance and Navigation, an Open-source Library Application
 
 ## 1. Overview
 
