@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/thoma/Desktop/ONERA/MAGNOLIA/matlab/osqp_c_code/include
+# Install script for directory: C:/Users/thoma/Desktop/ONERA/MAGNOLIA/matlab/osqp_solver/osqp_c_code/include
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

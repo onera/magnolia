@@ -25,11 +25,8 @@ void lqi_update(double* eta_hat, double* eta_ref, LQIState* state, Param* param)
     double dt = 1.0 / param->f_lqi;
     double error[3];
 
-    error[0] = eta_ref[0] - eta_hat[0]; 
-    error[1] = eta_ref[1] - eta_hat[1]; 
-    error[2] = eta_ref[2] - eta_hat[2]; 
-
     for (int i = 0; i < 3; i++) {
+        error[i] = eta_ref[i] - eta_hat[i];
         state->epsilon[i] += dt * error[i];
     }
 }

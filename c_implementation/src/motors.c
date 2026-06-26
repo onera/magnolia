@@ -2,7 +2,7 @@
 #include <math.h>
 
 void motors_init(MotorsState* state, Param* param) {
-    state->A = exp(-1.0 / ((double)param->f_plant * (double)param->tau_m));
+    state->A = exp(-1.0 /param->f_plant/param->tau_m);
     state->B = 1.0 - state->A;
 
     double init_val = (param->m * param->g) / 4.0;

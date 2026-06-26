@@ -14,9 +14,7 @@ typedef struct {
 } MPCState;
 
 void mpc_wrapper_init(MPCState* state);
-
 void mpc_wrapper_outputs(double* X_hat, double* X_ref, double* u, MPCState* state, Param* param);
-
 void mpc_wrapper_update(double* X_hat, double* X_ref, MPCState* state, Param* param);
 
 #endif // MPC_WRAPPER_H

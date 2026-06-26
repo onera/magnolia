@@ -1,5 +1,6 @@
 #include "../include/mpc_wrapper.h"
 #include "../lib/osqp_c_code/include/osqp.h" 
+#include "../lib/osqp_c_code/include/auxil.h"
 #include <string.h>
 #include <math.h>
 
@@ -10,44 +11,39 @@ void mpc_wrapper_init(MPCState* state) {
     memset(state->q_new, 0, sizeof(state->q_new));
     memset(state->l_new, 0, sizeof(state->l_new));
     memset(state->u_new, 0, sizeof(state->u_new));
+
+    cold_start(&workspace);
+    if (workspace.info != NULL) {
+        workspace.info->iter = 0;
+        workspace.info->status_val = 0;
+    }
 }
 
 void mpc_wrapper_outputs(double* X_hat, double* X_ref, double* u, MPCState* state, Param* param) {   
     int stride = param->Np + 1;    
 
     c_float X_aug[9];
-    X_aug[0] = (c_float)X_hat[0]; 
-    X_aug[1] = (c_float)X_hat[1];
-    X_aug[2] = (c_float)X_hat[2]; 
-    X_aug[3] = (c_float)X_hat[3]; 
-    X_aug[4] = (c_float)X_hat[4];
-    X_aug[5] = (c_float)X_hat[5]; 
-    X_aug[6] = (c_float)state->epsilon[0]; 
-    X_aug[7] = (c_float)state->epsilon[1]; 
-    X_aug[8] = (c_float)state->epsilon[2]; 
+    for (int i = 0; i < 3; i++) {
+        X_aug[i] = (c_float)X_hat[i];
+        X_aug[i+3] = (c_float)X_hat[i+3];  
+        X_aug[i+6] = (c_float)state->epsilon[i]; 
+    }
 
     int idx_q = 0;
 
     for (int j = 0; j < param->Np; j++) {
-        double rx = X_ref[0 * stride + j];
-        double ry = X_ref[1 * stride + j];
-        double rz = X_ref[2 * stride + j];
-
-        state->q_new[idx_q++] = (c_float)(-param->Q_mpc[0] * rx); 
-        state->q_new[idx_q++] = (c_float)(-param->Q_mpc[1] * ry); 
-        state->q_new[idx_q++] = (c_float)(-param->Q_mpc[2] * rz); 
-        state->q_new[idx_q++] = 0.0f;                             
-        state->q_new[idx_q++] = 0.0f;                             
-        state->q_new[idx_q++] = 0.0f;                            
-        state->q_new[idx_q++] = 0.0f;                             
-        state->q_new[idx_q++] = 0.0f;                             
-        state->q_new[idx_q++] = 0.0f;                             
+        for (int i = 0; i < 6; i++) {
+            state->q_new[idx_q++] = (c_float)(-param->Q_mpc[i] * X_ref[i * stride + j]); 
+        }
+        for (int i = 0; i < 3; i++){
+            state->q_new[idx_q++] = 0.0f; 
+        }                             
     }
 
     double X_ref_terminal[9] = {0.0};
-    X_ref_terminal[0] = X_ref[0 * stride + param->Np]; 
-    X_ref_terminal[1] = X_ref[1 * stride + param->Np]; 
-    X_ref_terminal[2] = X_ref[2 * stride + param->Np]; 
+    for (int i = 0; i < 6; i++) {
+        X_ref_terminal[i] = X_ref[i * stride + param->Np]; 
+    }
 
     for (int i = 0; i < param->nx; i++) {
         double sum = 0.0;
