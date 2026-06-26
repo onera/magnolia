@@ -47,7 +47,7 @@ function export_gains_to_c()
     fprintf(fid, '#define PARAM_NP %d\n', p.Np);
     fprintf(fid, '#define PARAM_NC %d\n', p.Nc);
     fprintf(fid, '#define PARAM_NX %d\n', mpc_data.n);
-    fprintf(fid, '#define PARAM_NU %d\n\n', mpc_data.m);
+    fprintf(fid, '#define PARAM_NU %d\n', mpc_data.m);
     fprintf(fid, '#define PARAM_W_TERMINAL %.17f\n\n', p.Wterminale);
 
     fprintf(fid, '#define PARAM_SIGMA_POS %.17f\n', p.sigma_p);

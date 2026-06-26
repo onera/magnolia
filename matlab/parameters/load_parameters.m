@@ -101,8 +101,8 @@ function p = load_parameters()
     p.M_u_T = inv(p.M_T_u);
 
     % NO NOISE
-    p.sigma_acc = 0;
-    p.sigma_omega = 0;
-    p.sigma_mag = 0;
-    p.sigma_p = 0;
+    % p.sigma_acc = 0;
+    % p.sigma_omega = 0;
+    % p.sigma_mag = 0;
+    % p.sigma_p = 0;
 end

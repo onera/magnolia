@@ -2,7 +2,6 @@ function plot_sim_results(simOut, ref, varargin)
     p = inputParser;
     addRequired(p, 'simOut');
     addRequired(p, 'ref');
-
     addParameter(p, 'Dashboard', false, @islogical);
     addParameter(p, 'Trajectory', false, @islogical);
     addParameter(p, 'Position', false, @islogical);
@@ -22,7 +21,6 @@ function plot_sim_results(simOut, ref, varargin)
         end
         i = i + 1;
     end
-
     if isempty(varargin)
         modifiedVarargin = {'Dashboard', true, 'Trajectory', true, 'Position', true, 'Velocity', true, 'Attitude', true, 'AngularRate', true, 'Thrust', true, 'Torques', true};
     end
@@ -30,12 +28,13 @@ function plot_sim_results(simOut, ref, varargin)
     parse(p, simOut, ref, modifiedVarargin{:});
     
     fprintf('Generating plots...\t\t\t\t\t\t');
-    p_ref_data = squeeze(ref.Data(:, 1, :))'; 
-
-    if p.Results.Dashboard, Dashboard(simOut, ref, p_ref_data); end
+    p_ref_data = squeeze(ref.Data(1:3, 1, :))'; 
+    v_ref_data = squeeze(ref.Data(4:6, 1, :))'; % Extraction des vitesses de référence
+    
+    if p.Results.Dashboard, Dashboard(simOut, ref, p_ref_data, v_ref_data); end
     if p.Results.Trajectory, Plot_3D_Trajectory(simOut, p_ref_data); end
     if p.Results.Position,       Plot_Position(simOut, ref, p_ref_data); end
-    if p.Results.Velocity,       Plot_Velocity(simOut); end
+    if p.Results.Velocity,       Plot_Velocity(simOut, ref, v_ref_data); end % Passage des vitesses de référence
     if p.Results.Attitude,       Plot_Attitude(simOut); end
     if p.Results.AngularRate,       Plot_Angular_Rates(simOut); end
     if p.Results.Thrust,    Plot_Thrust(simOut); end
@@ -63,8 +62,7 @@ end
 % =========================================================================
 % DASHBOARD
 % =========================================================================
-
-function Dashboard(simOut, ref, p_ref_data)
+function Dashboard(simOut, ref, p_ref_data, v_ref_data)
     figure('Name', 'Dashboard: Control & Estimation Overview', 'NumberTitle', 'off', ...
            'Units', 'normalized', 'Position', [0.05 0.05 0.9 0.85]);
     
@@ -80,14 +78,15 @@ function Dashboard(simOut, ref, p_ref_data)
     styleScopeLegend(lgd1, 10);
     yl = ylim; ylim([yl(1), yl(2) + 0.2*diff(yl)]); 
     
-    % 2. Velocity
+    % 2. Velocity (Avec Référence)
     nexttile;
-    stairs(simOut.p_dot_hat.Time, simOut.p_dot_hat.Data(:,1:3), '-', 'LineWidth', 1.2); hold on;
+    stairs(ref.Time, v_ref_data, '-', 'LineWidth', 1.0); hold on; % Ajout de la ref vitesse
+    stairs(simOut.p_dot_hat.Time, simOut.p_dot_hat.Data(:,1:3), '-', 'LineWidth', 1.2);
     plot(simOut.X_dot.Time, simOut.X_dot.Data(:,1:3), '-', 'LineWidth', 1.8);
     grid on; ylabel('Velocity [m/s]'); title('Velocity Tracking (dx, dy, dz)');
-    lgd2 = legend('Est dx', 'Est dy', 'Est dz', 'Real dx', 'Real dy', 'Real dz');
+    lgd2 = legend('Ref dx', 'Ref dy', 'Ref dz', 'Est dx', 'Est dy', 'Est dz', 'Real dx', 'Real dy', 'Real dz');
     styleScopeLegend(lgd2, 10);
-    yl = ylim; ylim([yl(1), yl(2) + 0.15*diff(yl)]);
+    yl = ylim; ylim([yl(1), yl(2) + 0.2*diff(yl)]);
     
     % 3. Attitude tracking
     nexttile;
@@ -104,7 +103,7 @@ function Dashboard(simOut, ref, p_ref_data)
     stairs(simOut.omega_hat.Time, simOut.omega_hat.Data(:,1:3), '-', 'LineWidth', 1.2); hold on;
     plot(simOut.X_dot.Time, simOut.X_dot.Data(:,4:6), '-', 'LineWidth', 1.8);
     grid on; ylabel('Angular Rate [rad/s]'); title('Angular Rates (p, q, r)');
-    lgd4 = legend('Est p', 'Est q', 'Est r', 'Real p', 'Real r');
+    lgd4 = legend('Est p', 'Est q', 'Est r', 'Real p', 'Real q', 'Real r');
     styleScopeLegend(lgd4, 10);
     yl = ylim; ylim([yl(1), yl(2) + 0.15*diff(yl)]);
     
@@ -130,7 +129,6 @@ end
 % =========================================================================
 % FULL SCREEN PLOTS
 % =========================================================================
-
 function Plot_Position(simOut, ref, p_ref_data)
     createFullFigure('Position Tracking');
     stairs(ref.Time, p_ref_data, '-', 'LineWidth', 1.2); hold on;
@@ -141,13 +139,14 @@ function Plot_Position(simOut, ref, p_ref_data)
     styleScopeLegend(lgd_f2, 15); yl = ylim; ylim([yl(1), yl(2) + 0.15*diff(yl)]); 
 end
 
-function Plot_Velocity(simOut)
+function Plot_Velocity(simOut, ref, v_ref_data)
     createFullFigure('Velocity');
-    stairs(simOut.p_dot_hat.Time, simOut.p_dot_hat.Data(:,1:3), '-', 'LineWidth', 1.4); hold on;
+    stairs(ref.Time, v_ref_data, '-', 'LineWidth', 1.2); hold on; % Ajout de la ref vitesse
+    stairs(simOut.p_dot_hat.Time, simOut.p_dot_hat.Data(:,1:3), '-', 'LineWidth', 1.4);
     plot(simOut.X_dot.Time, simOut.X_dot.Data(:,1:3), '-', 'LineWidth', 2.0);
     grid on; ylabel('Velocity [m/s]'); xlabel('Time [s]'); title('Velocity (dx, dy, dz)');
-    lgd_f3 = legend('Est dx', 'Est dy', 'Est dz', 'Real dx', 'Real dy', 'Real dz');
-    styleScopeLegend(lgd_f3, 15); yl = ylim; ylim([yl(1), yl(2) + 0.12*diff(yl)]);
+    lgd_f3 = legend('Ref dx', 'Ref dy', 'Ref dz', 'Est dx', 'Est dy', 'Est dz', 'Real dx', 'Real dy', 'Real dz');
+    styleScopeLegend(lgd_f3, 15); yl = ylim; ylim([yl(1), yl(2) + 0.15*diff(yl)]);
 end
 
 function Plot_Attitude(simOut)
@@ -190,12 +189,10 @@ end
 % =========================================================================
 % 3D Trajectory
 % =========================================================================
-
 function Plot_3D_Trajectory(simOut, p_ref_data)
     x_data = simOut.X.Data(:, 1);
     y_data = simOut.X.Data(:, 2);
     z_data = simOut.X.Data(:, 3);
-
     x_ref_data = p_ref_data(:, 1);
     y_ref_data = p_ref_data(:, 2);
     z_ref_data = p_ref_data(:, 3);

@@ -3,8 +3,12 @@
 
 #include "simstruc.h"
 #include "osqp.h"
+#include "auxil.h"
 #include "workspace.h"
-#include "config_mpc.h"
+#include "config_mpc.h" 
+
+#define OSQP_N  (N_STATES * (NP + 1) + N_INPUTS * NC)
+#define OSQP_M  (2 * N_STATES * (NP + 1) + N_INPUTS * NC)
 
 static void mdlInitializeSizes(SimStruct *S)
 {
@@ -12,27 +16,35 @@ static void mdlInitializeSizes(SimStruct *S)
     if (ssGetNumSFcnParams(S) != ssGetSFcnParamsCount(S)) return;
 
     if (!ssSetNumInputPorts(S, 3)) return;
-    
-    ssSetInputPortWidth(S, 0, workspace.data->n);
+
+    ssSetInputPortWidth(S, 0, OSQP_N); 
     ssSetInputPortDirectFeedThrough(S, 0, 1);
     ssSetInputPortRequiredContiguous(S, 0, 1);
 
-    ssSetInputPortWidth(S, 1, workspace.data->m);
+    ssSetInputPortWidth(S, 1, OSQP_M); 
     ssSetInputPortDirectFeedThrough(S, 1, 1);
     ssSetInputPortRequiredContiguous(S, 1, 1);
 
-    ssSetInputPortWidth(S, 2, workspace.data->m);
+    ssSetInputPortWidth(S, 2, OSQP_M); 
     ssSetInputPortDirectFeedThrough(S, 2, 1);
     ssSetInputPortRequiredContiguous(S, 2, 1);
 
     if (!ssSetNumOutputPorts(S, 2)) return;
     
-    ssSetOutputPortWidth(S, 0, 3);
-    
-    ssSetOutputPortWidth(S, 1, 1);
+    ssSetOutputPortWidth(S, 0, 3);  
+    ssSetOutputPortWidth(S, 1, 1);   
     
     ssSetNumSampleTimes(S, 1);
     ssSetOptions(S, SS_OPTION_EXCEPTION_FREE_CODE);
+}
+
+static void mdlInitializeConditions(SimStruct *S)
+{
+    cold_start(&workspace);
+    if (workspace.info != NULL) {
+        workspace.info->iter = 0;
+        workspace.info->status_val = 0;
+    }
 }
 
 static void mdlInitializeSampleTimes(SimStruct *S)
@@ -56,11 +68,10 @@ static void mdlOutputs(SimStruct *S, int_T tid)
     osqp_solve(&workspace);
 
     status[0] = (real_T)workspace.info->status_val;
-
     if (workspace.info->status_val == 1 || workspace.info->status_val == 2) {
-        mv[0] = (real_T)workspace.solution->x[N_STATES*(NP+1)];
-        mv[1] = (real_T)workspace.solution->x[N_STATES*(NP+1)+1];
-        mv[2] = (real_T)workspace.solution->x[N_STATES*(NP+1)+2];
+        mv[0] = (real_T)workspace.solution->x[N_STATES * (NP + 1)];
+        mv[1] = (real_T)workspace.solution->x[N_STATES * (NP + 1) + 1];
+        mv[2] = (real_T)workspace.solution->x[N_STATES * (NP + 1) + 2];
     } else {
         mv[0] = 0.0; 
         mv[1] = 0.0; 

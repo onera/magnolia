@@ -10,3 +10,6 @@ matlab/osqp_c_code/build
 matlab/*.autosave
 matlab/modele_V6_grt_rtw
 matlab/*.bak
+matlab/post_processing/*.asv
+
+checker/__pycache__/*

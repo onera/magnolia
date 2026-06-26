@@ -1,7 +1,7 @@
 function compare_c_to_matlab()
-    file1 = '../c_implementation/debug/log_c.csv';
-    file2 = 'logs/log_matlab_hex.csv';
-    file_output = 'logs/log_delta.csv';
+    file1 = '../checker/c_Castle_hex.csv';
+    file2 = '../checker/matlab_Castle_hex.csv';
+    file_output = 'log_delta.csv';
     
     opts = detectImportOptions(file1); 
     opts.VariableTypes(:) = {'char'}; 

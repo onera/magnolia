@@ -8,10 +8,13 @@ addpath(fullfile(projectDir, 'MahonyAHRS'));
 
 try rmdir('slprj', 's'); catch; end
 
+function print_line()
+    fprintf('%s\n', repmat('-', 1, 75));
+end
+
 %% 1. Load Parameters
 fprintf('Loading system parameters...\t\t\t\t\t');
 p = load_parameters();
-
 fprintf('[done]\n')
 
 %% 2. Design Controllers and Estimators
@@ -22,45 +25,58 @@ mpc_data    = design_MPC(p);
 mpc_data = rmfield(mpc_data, {'P_osqp', 'A_osqp'});
 fprintf('[done]\n')
 
-%% 3. Simulation Setup & Reference Generation
-fprintf('Generating reference trajectory...\t\t\t\t');
-T_SIM = 10; % Total simulation time (s)
-
-% Time vector based on the fastest sensor frequency (Mahony)
-t = (0 : 1/p.f_mahony : T_SIM)';
-N = length(t);
-
-% Constant reference trajectory at [3, 3, 3] meters
-X_ref = ones(p.Np + 1, N) * 3;
-Y_ref = ones(p.Np + 1, N) * 3;
-Z_ref = ones(p.Np + 1, N) * 3;
-
-ref_matrix = zeros(3, p.Np + 1, N);
-ref_matrix(1, :, :) = X_ref;
-ref_matrix(2, :, :) = Y_ref;
-ref_matrix(3, :, :) = Z_ref; 
-
-% Create timeseries object for Simulink
-ref = timeseries(ref_matrix, t);
-
-% Cleaning workspace
-clear N ref_matrix t X_ref Y_ref Z_ref projectDir;
-
-fprintf('[done]\n')
-
-%% 4. Building osqp
+%% 3. Building osqp
 build_osqp_solver();
 
-%% 5. Run Simulink Model
-fprintf('Starting Simulink simulation...\n');
-simOut = sim('modele_V6', 'StopTime', num2str(T_SIM));
-fprintf('Simulation finished successfully!\n');
+%% 4. Run Simulink Model
+%TRAJECTORIES_TO_TEST = {'StepX', 'StepY', 'StepZ', 'Castle', 'Lemniscate', 'Helix'};
+TRAJECTORIES_TO_TEST = {'StepX'};
+SHIFT_SECONDS = 2.5;
 
-%% 6. Plot Results
-plot_sim_results(simOut, ref);
+fprintf('\n\nStarting Batch Simulation...\n');
+print_line();
 
-%% 7. Export Data To csv
-sim_data_to_csv(simOut, 'Hex', 'Dec');
+for idx_traj = 1:length(TRAJECTORIES_TO_TEST)
+    TRAJ_CHOICE = TRAJECTORIES_TO_TEST{idx_traj};
+    
+    fprintf('Scenario [%s] - Generating reference...\n', TRAJ_CHOICE);
+    [ref_shift, ref_origin, t, T_SIM] = generate_reference(p, TRAJ_CHOICE, SHIFT_SECONDS);
+    ref = ref_shift;
+    
+    fprintf('Scenario [%s] - Running Simulink model...\n', TRAJ_CHOICE);
+    assignin('base', 'ref', ref);
+    assignin('base', 'T_SIM', T_SIM);
+    simOut = sim('modele_V6', 'StopTime', num2str(T_SIM));
 
-%% 8. Compare C & Matlab
-compare_c_to_matlab();
+    simOut.ref = ref_origin;
+    csv_filename = sprintf('../checker/matlab_%s.csv', TRAJ_CHOICE);
+    fprintf('Scenario [%s] - Exporting data to %s...\n', TRAJ_CHOICE, csv_filename);
+    sim_data_to_csv(simOut, csv_filename, 'Dec');
+    
+    print_line();
+end
+
+%% 5. Check Results
+
+fprintf('\nLaunching Python Requirements Checker...\n');
+
+try
+    py.sys.path().append('../');
+    checker_py = py.importlib.import_module('checker.checker');
+    py.importlib.reload(checker_py);
+
+    for idx_traj = 1:length(TRAJECTORIES_TO_TEST)
+        TRAJ_CHOICE = TRAJECTORIES_TO_TEST{idx_traj};
+
+        csv_filename = sprintf('../checker/matlab_%s.csv', TRAJ_CHOICE);
+        full_csv_path = fullfile(projectDir, csv_filename);
+
+        checker_py.check_requirements(py.str(full_csv_path));
+    end
+catch ME
+    warning(ME.identifier ,'%s', ME.message);
+end
+
+%%
+
+plot_sim_results(simOut, ref_origin, 'Attitude');

@@ -133,7 +133,7 @@ end
 p = load_parameters();
 mpc_data = design_MPC(p);
 
-fprintf('--- Starting OSQP Build Process ---\n');
+fprintf('\n--- Starting OSQP Build Process ---\n');
 
 % Add OSQP to path
 buildDir = fullfile(pwd, 'osqp_solver');
@@ -170,10 +170,13 @@ clean_osqp_code(c_code_dir);
 % Parameters manual definitions
 config_file_path = fullfile(buildDir, 'config_mpc.h');
 fid = fopen(config_file_path, 'wt');
+fprintf(fid, '#ifndef CONFIG_MPC_H\n');
+fprintf(fid, '#define CONFIG_MPC_H\n\n');
 fprintf(fid, '#define NP %d\n', p.Np);
 fprintf(fid, '#define NC %d\n', p.Nc);
 fprintf(fid, '#define N_STATES %d\n', mpc_data.n);
 fprintf(fid, '#define N_INPUTS %d\n', mpc_data.m);
+fprintf(fid, '\n#endif // CONFIG_MPC_H\n');
 fclose(fid);
 
 % MEX file build
