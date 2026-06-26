@@ -1,200 +1,179 @@
-from math import *
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
+import csv
+import math
 import os
+import matplotlib.pyplot as plt
 
+requirements = {
+    'step': {
+        'X/Y': {'settling_5%': 6.0, 'rise_time': 4.0, 'overshoot': 2.0, 'static_error': 1.0},
+        'Z':   {'settling_5%': 6.0, 'rise_time': 4.0, 'overshoot': 2.0, 'static_error': 1.0},
+        'psi': {'settling_5%': 3.0, 'rise_time': 2.5, 'overshoot': 2.0, 'static_error': 1.0}
+    },
+    'trajectory': {
+        'X/Y': {'rmse': 0.1, 'max_error': 0.15},
+        'Z':   {'rmse': 0.1, 'max_error': 0.15},
+        'psi': {'rmse': 0.1, 'max_error': 0.5}
+    }
+}
 
-###########################################################################
-## REQUIREMENTS DEFINITION
-###########################################################################
-
-requirements = dict()
-requirements['step'] = {'X/Y': {'R1': {'5% name': '5% settling time', '5% value': 6.0,
-                                       '2% name': '2% settling time', '2% value': 7.0,
-                                       '1% name': '1% settling time', '1% value': 8.0},
-                                'R2': {'name': 'Rise Time', 'value': 4.0},
-                                'R3': {'name': 'Overshoot', 'value': 2.0},
-                                'R4': {'name': 'Static error', 'value': 1.0}},
-                        'Z': {'R1': {'5% name': '5% settling time', '5% value': 6.0,
-                                     '2% name': '2% settling time', '2% value': 7.0,
-                                     '1% name': '1% settling time', '1% value': 8.0},
-                              'R2': {'name': 'Rise Time', 'value': 4.0},
-                              'R3': {'name': 'Overshoot', 'value': 2.0},
-                              'R4': {'name': 'Static error', 'value': 1.0}},
-                        'phi/theta': {'R1': {'5% name': '5% settling time', '5% value': 1.0,
-                                             '2% name': '2% settling time', '2% value': 1.5,
-                                             '1% name': '1% settling time', '1% value': 2.0},
-                                      'R2': {'name': 'Rise Time', 'value': 0.8},
-                                      'R3': {'name': 'Overshoot', 'value': 2.0},
-                                      'R4': {'name': 'Static error', 'value': 1.0}},
-                        'psi': {'R1': {'5% name': '5% settling time', '5% value': 3.0,
-                                       '2% name': '2% settling time', '2% value': 3.5,
-                                       '1% name': '1% settling time', '1% value': 4.0},
-                                'R2': {'name': 'Rise Time', 'value': 2.5},
-                                'R3': {'name': 'Overshoot', 'value': 2.0},
-                                'R4': {'name': 'Static error', 'value': 1.0}}}
-
-requirements['trajectory'] = {'X/Y': {'R1': {'name': 'RMSE', 'value': 0.1},
-                                      'R2': {'name': 'Max error', 'value': 0.15}},
-                              'Z': {'R1': {'name': 'RMSE', 'value': 0.1},
-                                    'R2': {'name': 'Max error', 'value': 0.15}},
-                              'psi': {'R1': {'name': 'RMSE', 'value': 0.1},
-                                      'R2': {'name': 'Max error', 'value': 0.5}}}
-
-###########################################################################
-## STEP
-###########################################################################
-
-def get_settling (x, t, th):
-    """
-    Returns: settling time of x at th%
-    
-    Parameter x: variable tested
-    Parameter t: time list
-    Parameter th: settling threshold (ex : 5% of steady state value)
-    """
+def get_settling(x, t, th=5.0):
     x_steady_state = x[-1]
-    settling_time_5_value = abs(x_steady_state*th/100)
-    indexes = [i for i in range(len(x)) if abs(x[i]-x_steady_state) > settling_time_5_value]
-
-    return float(t[indexes[-1]])
-
-def get_rise_time (x, t):
-    """
-    Returns: rise time of x
+    settling_threshold_val = abs(x_steady_state * th / 100)
     
-    Parameter x: variable tested
-    Parameter t: time list
-    """
+    last_out_index = -1
+    for i in range(len(x)):
+        if abs(x[i] - x_steady_state) > settling_threshold_val:
+            last_out_index = i
+            
+    return float(t[last_out_index]) if last_out_index != -1 else 0.0
+
+def get_rise_time(x, t):
     x_steady_state = x[-1]
-
-    rise_time_10_value = 0.1 * x_steady_state
-    indexes = [i for i in range(len(x)) if x[i] < rise_time_10_value]
-    rise_time_10 = t[indexes[-1]]
-
-    rise_time_90_value = 0.9 * x_steady_state
-    indexes = [i for i in range(len(x)) if x[i] < rise_time_90_value]
-    rise_time_90 = t[indexes[-1]]
     
+    rise_10_val = 0.1 * x_steady_state
+    rise_time_10 = t[0]
+    for i in range(len(x)):
+        if x[i] < rise_10_val:
+            rise_time_10 = t[i]
+
+    rise_90_val = 0.9 * x_steady_state
+    rise_time_90 = t[-1]
+    for i in range(len(x)):
+        if x[i] < rise_90_val:
+            rise_time_90 = t[i]
+            
     return float(rise_time_90 - rise_time_10)
 
-def get_overshoot (x, t):
-    """
-    Returns: overshoot of x
-    
-    Parameter x: variable tested
-    Parameter t: time list
-    """
+def get_overshoot(x):
     x_steady_state = x[-1]
-    x_max = max(x)
+    if x_steady_state == 0: return 0.0
+    x_max = max(x) if x_steady_state >= 0 else min(x)
+    overshoot = (x_max - x_steady_state) / x_steady_state * 100
+    return float(max(0, overshoot))
 
-    overshoot = (x_max - x_steady_state)/x_steady_state*100
-    return float(max(0,overshoot))
-
-def get_static_error (x, ref):
-    """
-    Returns: static error of x compared to ref
-    
-    Parameter x: variable tested
-    Parameter ref: x reference value
-    """
+def get_static_error(x, ref):
     x_steady_state = x[-1]
+    if ref == 0: return float(abs(x_steady_state))
+    return float(abs(ref - x_steady_state) / ref * 100)
+
+def get_req_category(variable):
+    var_l = variable.lower()
+    if var_l in ['x', 'y']: return 'X/Y'
+    if var_l == 'z': return 'Z'
+    if var_l == 'psi': return 'psi'
+    return None
+
+def load_csv_to_dict(csv_filepath):
+    data = {}
+    with open(csv_filepath, mode='r', newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        headers = reader.fieldnames
+        for h in headers:
+            data[h] = []
+        for row in reader:
+            for h in headers:
+                val_str = row[h].strip()
+                if val_str.startswith('0x') or val_str.startswith('-0x'):
+                    data[h].append(float.fromhex(val_str))
+                else:
+                    data[h].append(float(val_str))
+    return data
+
+
+def check_step(data, variable, filename, source):
+    for var in variable:
+        req_cat = get_req_category(var)
+        x = data[var.lower()]
+        t = data['time']
+        ref_val = data[f'ref_{var.lower()}'][-1]
+        
+        s_time = get_settling(x, t, 5.0)
+        r_time = get_rise_time(x, t)
+        ov = get_overshoot(x)
+        s_error = get_static_error(x, ref_val)
+        
+        limits = requirements['step'][req_cat]
+        
+        s_time_valid  = "PASS" if s_time < limits['settling_5%'] else "FAIL"
+        r_time_valid  = "PASS" if r_time < limits['rise_time'] else "FAIL"
+        ov_valid      = "PASS" if ov < limits['overshoot'] else "FAIL"
+        s_error_valid = "PASS" if s_error < limits['static_error'] else "FAIL"
+        
+        print(f"File: {filename} [{source}] | Type: Step {var.upper()} ({t[-1]:.1f}s)")
+        print(f"{"REQUIREMENT":<25} | {"VALUE":^12} | {"LIMIT":^12} | {"STATUS":^10}")
+        print('-' * 68)
+        print(f"{"5% Settling Time":<25} | {s_time:>10.2f} s | {limits['settling_5%']:>10.2f} s | {s_time_valid:^10}")
+        print(f"{"Rise Time":<25} | {r_time:>10.2f} s | {limits['rise_time']:>10.2f} s | {r_time_valid:^10}")
+        print(f"{"Overshoot":<25} | {ov:>10.2f} % | {limits['overshoot']:>10.2f} % | {ov_valid:^10}")
+        print(f"{"Static Error":<25} | {s_error:>10.2f} % | {limits['static_error']:>10.2f} % | {s_error_valid:^10}")
+        print("=" * 68 + "\n")
+
+def check_trajectory(data, filename, source):
+    t = data['time']
+    print(f"File: {filename} [{source}] | Type: Trajectory Tracking ({t[-1]:.1f}s)")
+    print(f"{"REQUIREMENT":<25} | {"VALUE":^12} | {"LIMIT":^12} | {"STATUS":^10}")
+    print('-' * 68)
     
-    return float(abs(ref - x_steady_state)/ref*100)
+    for var in ['x', 'y', 'z']:
+        req_cat = get_req_category(var)
+        x_data = data[var]
+        ref_data = data[f'ref_{var}']
+        
+        errors = [x_d - r_d for x_d, r_d in zip(x_data, ref_data)]
+        rmse = math.sqrt(sum([e**2 for e in errors]) / len(errors)) if errors else 0.0
+        max_err = max([abs(e) for e in errors]) if errors else 0.0
+        
+        limits = requirements['trajectory'][req_cat]
+        
+        rmse_valid = "PASS" if rmse < limits['rmse'] else "FAIL"
+        max_valid  = "PASS" if max_err < limits['max_error'] else "FAIL"
+        
+        print(f"{var.upper() + ' - RMSE':<25} | {rmse:>12.3f} | {limits['rmse']:>12.3f} | {rmse_valid:^10}")
+        print(f"{var.upper() + ' - Max Error':<25} | {max_err:>12.3f} | {limits['max_error']:>12.3f} | {max_valid:^10}")
+    print("=" * 68 + "\n")
 
-def step_checker(x, t, ref, threshold, variable):
-    if variable == 'X' or variable == 'Y':
-        variable = 'X/Y'
+def check_requirements(csv_filepath):
+    csv_filepath = str(csv_filepath)
 
-    s_time = get_settling (x, t, threshold)
-    r_time = get_rise_time (x, t)
-    ov = get_overshoot (x, t)
-    s_error = get_static_error (x, ref)
-
-    s_time_criteria = requirements['step'][variable]['R1'][f"{int(threshold)}% name"]
-    r_time_criteria = requirements['step'][variable]['R2']['name']
-    ov_criteria = requirements['step'][variable]['R3']['name']                   
-    s_error_criteria = requirements['step'][variable]['R4']['name']
-
-    s_time_validation = str(s_time<requirements['step'][variable]['R1'][f"{int(threshold)}% value"]).upper()
-    r_time_validation = str(r_time<requirements['step'][variable]['R2']['value']).upper()
-    ov_validation = str(ov<requirements['step'][variable]['R3']['value']).upper()
-    s_error_validation = str(s_error<requirements['step'][variable]['R4']['value']).upper()
-
-    print(f"{float(t[-1])}s step response properties for a step of {float(ref)}\n")
-    print(f"{"NAME":^20} | {"VALUE":^10} | {"STATUS":^12}")
-    print('-' * 48)
-    print(f"{s_time_criteria:20} | {float(s_time):>7.3f} s  | {s_time_validation:^12}")
-    print(f"{r_time_criteria:20} | {float(r_time):>7.3f} s  | {r_time_validation:^12}")
-    print(f"{ov_criteria:20} | {float(ov):>7.3f} %  | {ov_validation:^12}")
-    print(f"{s_error_criteria:20} | {float(s_error):>7.3f} %  | {s_error_validation:^12}")
-
-###########################################################################
-# TRAJECTORY
-###########################################################################
-
-def get_rmse (x , ref):
-    x = np.array(x).flatten()
-    ref = np.array(ref).flatten()
-    n = min(len(x), len(ref))
-    return np.sqrt(np.mean((np.array(x[:n]) - np.array(ref[:n]))**2))
-
-def get_max_error (x, ref):
-    x = np.array(x).flatten()
-    ref = np.array(ref).flatten()
-    n = min(len(x), len(ref))
-    return np.max(np.abs(np.array(x[:n])-np.array(ref[:n])))
-
-def trajectory_checker(x, ref, variable):
-    if variable == 'X' or variable == 'Y':
-        variable = 'X/Y'
-
-    rmse = get_rmse(x, ref)
-    max_error = get_max_error(x, ref)
-    
-    rmse_criteria = requirements['trajectory'][variable]['R1']['name']
-    max_error_criteria = requirements['trajectory'][variable]['R2']['name']
-
-    rmse_validation = str(rmse<requirements['trajectory'][variable]['R1']['value']).upper()
-    max_error_validation = str(max_error<requirements['trajectory'][variable]['R2']['value']).upper()
-
-    print(f"{"NAME":^20} | {"VALUE":^10} | {"STATUS":^12}")
-    print('-' * 48)
-    print(f"{rmse_criteria:20} | {rmse:>7.3f}    | {rmse_validation:^12}")
-    print(f"{max_error_criteria:20} | {max_error:>7.3f}    | {max_error_validation:^12}")
-
-###########################################################################
-# PLOTTING
-###########################################################################
-
-def plot_sim_results(csv_filepath="c_implementation/debug/sim_log.csv"):
     if not os.path.exists(csv_filepath):
-        # Fallback de chemin si lancé depuis un autre dossier
-        csv_filepath = "debug/sim_log.csv"
-        if not os.path.exists(csv_filepath):
-            print(f"Erreur : Le fichier {csv_filepath} est introuvable.")
-            return
+        print(f"[ERROR] Verification aborted: File '{csv_filepath}' not found.")
+        return
+    
+    filename = os.path.basename(csv_filepath)
+    data = load_csv_to_dict(csv_filepath)
+    source = 'MATLAB' if 'matlab' in filename.lower() else 'C_CODE'
+    filename_lower = filename.lower()
+    
+    print("\n" + "=" * 68)
+    print(f"CHECKING REQUIREMENTS")
+    print("=" * 68)
+    
+    if 'step' in filename_lower:
+        var_to_check = 'xyz' if 'stepxyz' in filename_lower else ('x' if 'stepx' in filename_lower else ('y' if 'stepy' in filename_lower else 'z'))
+        check_step(data, var_to_check, filename, source)
+    else:
+        check_trajectory(data, filename, source)
 
-    df = pd.read_csv(csv_filepath)
+def plot_simulation_results(csv_filepath):
+    if not os.path.exists(csv_filepath):
+        print(f"[ERROR] Plotting aborted: File '{csv_filepath}' not found.")
+        return
 
-    # Configuration du style Scope
+    df = load_csv_to_dict(csv_filepath)
+
     plt.rcParams['grid.color'] = '#404040'
     plt.rcParams['grid.linestyle'] = '--'
     plt.rcParams['grid.linewidth'] = 0.5
     
-    # =========================================================================
-    # 1. DASHBOARD
-    # =========================================================================
     fig_dash, axs = plt.subplots(3, 2, figsize=(16, 9))
-    fig_dash.canvas.manager.set_window_title('Dashboard: Control & Estimation Overview')
+    title_prefix = os.path.basename(csv_filepath)
+    fig_dash.canvas.manager.set_window_title(f'Dashboard: {title_prefix}')
     
     for ax in axs.flat:
         ax.set_facecolor("#ffffff") 
         ax.grid(True)
-        ax.tick_params(colors='black')
 
-    # 1.1 Position Tracking 
+    # 1.1 Position Tracking
     axs[0, 0].step(df['time'], df['ref_x'], '-', color='#1f77b4', linewidth=1.0, label='Ref x', where='post')
     axs[0, 0].step(df['time'], df['ref_y'], '-', color='#ff7f0e', linewidth=1.0, label='Ref y', where='post')
     axs[0, 0].step(df['time'], df['ref_z'], '-', color='#2ca02c', linewidth=1.0, label='Ref z', where='post')
@@ -206,20 +185,23 @@ def plot_sim_results(csv_filepath="c_implementation/debug/sim_log.csv"):
     axs[0, 0].plot(df['time'], df['z'], '-', color='#d62728', linewidth=1.8, label='Real z')
     axs[0, 0].set_ylabel('Position [m]')
     axs[0, 0].set_title('Position Tracking (x, y, z)')
-    axs[0, 0].legend(loc='upper left', ncol=3, fontsize='x-small', facecolor='none', edgecolor='none', labelcolor='white')
+    axs[0, 0].legend(loc='upper left', ncol=3, fontsize='x-small', facecolor='none', edgecolor='none')
 
-    # 1.2 Velocity Tracking 
-    axs[0, 1].step(df['time'], df['est_dx'], '-', color='#1f77b4', linewidth=1.2, label='Est dx', where='post')
-    axs[0, 1].step(df['time'], df['est_dy'], '-', color='#ff7f0e', linewidth=1.2, label='Est dy', where='post')
-    axs[0, 1].step(df['time'], df['est_dz'], '-', color='#2ca02c', linewidth=1.2, label='Est dz', where='post')
-    axs[0, 1].plot(df['time'], df['dx'], '-', color='#9467bd', linewidth=1.8, label='Real dx')
-    axs[0, 1].plot(df['time'], df['dy'], '-', color='#8c564b', linewidth=1.8, label='Real dy')
-    axs[0, 1].plot(df['time'], df['dz'], '-', color='#e377c2', linewidth=1.8, label='Real dz')
+    # 1.2 Velocity Tracking
+    axs[0, 1].step(df['time'], df['ref_dx'], '--', color='#1f77b4', linewidth=1.0, label='Ref dx', where='post')
+    axs[0, 1].step(df['time'], df['ref_dy'], '--', color='#ff7f0e', linewidth=1.0, label='Ref dy', where='post')
+    axs[0, 1].step(df['time'], df['ref_dz'], '--', color='#2ca02c', linewidth=1.0, label='Ref dz', where='post')
+    axs[0, 1].step(df['time'], df['est_dx'], '-', color='#9467bd', linewidth=1.2, label='Est dx', where='post')
+    axs[0, 1].step(df['time'], df['est_dy'], '-', color='#8c564b', linewidth=1.2, label='Est dy', where='post')
+    axs[0, 1].step(df['time'], df['est_dz'], '-', color='#e377c2', linewidth=1.2, label='Est dz', where='post')
+    axs[0, 1].plot(df['time'], df['dx'], '-', color='#bcbd22', linewidth=1.8, label='Real dx')
+    axs[0, 1].plot(df['time'], df['dy'], '-', color='#17becf', linewidth=1.8, label='Real dy')
+    axs[0, 1].plot(df['time'], df['dz'], '-', color='#d62728', linewidth=1.8, label='Real dz')
     axs[0, 1].set_ylabel('Velocity [m/s]')
     axs[0, 1].set_title('Velocity Tracking (dx, dy, dz)')
-    axs[0, 1].legend(loc='upper left', ncol=2, fontsize='x-small', facecolor='none', edgecolor='none', labelcolor='white')
+    axs[0, 1].legend(loc='upper left', ncol=3, fontsize='x-small', facecolor='none', edgecolor='none')
 
-    # 1.3 Attitude Tracking 
+    # 1.3 Attitude Tracking
     axs[1, 0].step(df['time'], df['ref_phi'], '-', color='#1f77b4', linewidth=1.0, label=r'Ref $\phi$', where='post')
     axs[1, 0].step(df['time'], df['ref_theta'], '-', color='#ff7f0e', linewidth=1.0, label=r'Ref $\theta$', where='post')
     axs[1, 0].step(df['time'], df['ref_psi'], '-', color='#2ca02c', linewidth=1.0, label=r'Ref $\psi$', where='post')
@@ -231,9 +213,9 @@ def plot_sim_results(csv_filepath="c_implementation/debug/sim_log.csv"):
     axs[1, 0].plot(df['time'], df['psi'], '-', color='#d62728', linewidth=1.8, label=r'Real $\psi$')
     axs[1, 0].set_ylabel('Attitude [rad]')
     axs[1, 0].set_title(r'Attitude Tracking ($\phi$, $\theta$, $\psi$)')
-    axs[1, 0].legend(loc='upper left', ncol=3, fontsize='x-small', facecolor='none', edgecolor='none', labelcolor='white')
+    axs[1, 0].legend(loc='upper left', ncol=3, fontsize='x-small', facecolor='none', edgecolor='none')
 
-    # 1.4 Angular Rates 
+    # 1.4 Angular Rates
     axs[1, 1].step(df['time'], df['est_p'], '-', color='#1f77b4', linewidth=1.2, label='Est p', where='post') 
     axs[1, 1].step(df['time'], df['est_q'], '-', color='#ff7f0e', linewidth=1.2, label='Est q', where='post')
     axs[1, 1].step(df['time'], df['est_r'], '-', color='#2ca02c', linewidth=1.2, label='Est r', where='post')
@@ -242,17 +224,17 @@ def plot_sim_results(csv_filepath="c_implementation/debug/sim_log.csv"):
     axs[1, 1].plot(df['time'], df['r'], '-', color='#e377c2', linewidth=1.8, label='Real r')
     axs[1, 1].set_ylabel('Angular Rate [rad/s]')
     axs[1, 1].set_title('Angular Rates (p, q, r)')
-    axs[1, 1].legend(loc='upper left', ncol=2, fontsize='x-small', facecolor='none', edgecolor='none', labelcolor='white')
+    axs[1, 1].legend(loc='upper left', ncol=2, fontsize='x-small', facecolor='none', edgecolor='none')
 
-    # 1.5 Thrust 
+    # 1.5 Thrust
     axs[2, 0].step(df['time'], df['cmd_T'], '-', color='#1f77b4', linewidth=1.2, label='Cmd T', where='post')
     axs[2, 0].plot(df['time'], df['real_T'], '-', color='#ff7f0e', linewidth=1.8, label='Real T_m (Motors)')
     axs[2, 0].set_ylabel('Thrust [N]')
     axs[2, 0].set_xlabel('Time [s]')
     axs[2, 0].set_title('Thrust: Commanded vs Real (T vs T_m)')
-    axs[2, 0].legend(loc='upper left', facecolor='none', edgecolor='none', labelcolor='white')
+    axs[2, 0].legend(loc='upper left', facecolor='none', edgecolor='none')
 
-    # 1.6 Control Torques 
+    # 1.6 Control Torques
     axs[2, 1].step(df['time'], df['cmd_tau_phi'], '-', color='#1f77b4', linewidth=1.2, label=r'$\tau_{\phi}$ cmd', where='post')
     axs[2, 1].step(df['time'], df['cmd_tau_theta'], '-', color='#ff7f0e', linewidth=1.2, label=r'$\tau_{\theta}$ cmd', where='post')
     axs[2, 1].step(df['time'], df['cmd_tau_psi'], '-', color='#2ca02c', linewidth=1.2, label=r'$\tau_{\psi}$ cmd', where='post')
@@ -262,101 +244,7 @@ def plot_sim_results(csv_filepath="c_implementation/debug/sim_log.csv"):
     axs[2, 1].set_ylabel('Torque [N.m]')
     axs[2, 1].set_xlabel('Time [s]')
     axs[2, 1].set_title(r'Control Torques: Commanded vs Real ($\tau$ vs $\tau_m$)')
-    axs[2, 1].legend(loc='upper left', ncol=2, fontsize='x-small', facecolor='none', edgecolor='none', labelcolor='white')
+    axs[2, 1].legend(loc='upper left', ncol=2, fontsize='x-small', facecolor='none', edgecolor='none')
 
     plt.tight_layout()
-
-    # =========================================================================
-    # 2. FIGURES PLEIN ÉCRAN
-    # =========================================================================
-    
-    # 2.1 Position 
-    plt.figure('Position Tracking', figsize=(12, 6))
-    plt.step(df['time'], df['ref_x'], '-', linewidth=1.2, label='Ref x')
-    plt.step(df['time'], df['ref_y'], '-', linewidth=1.2, label='Ref y')
-    plt.step(df['time'], df['ref_z'], '-', linewidth=1.2, label='Ref z')
-    plt.step(df['time'], df['est_x'], '-', linewidth=1.4, label='Est x')
-    plt.step(df['time'], df['est_y'], '-', linewidth=1.4, label='Est y')
-    plt.step(df['time'], df['est_z'], '-', linewidth=1.4, label='Est z')
-    plt.plot(df['time'], df['x'], '-', linewidth=2.0, label='Real x')
-    plt.plot(df['time'], df['y'], '-', linewidth=2.0, label='Real y')
-    plt.plot(df['time'], df['z'], '-', linewidth=2.0, label='Real z')
-    plt.grid(True)
-    plt.title('Position Tracking (x, y, z)', fontsize=16, fontweight='bold', pad=15)
-    plt.ylabel('Position [m]', fontsize=14, fontweight='bold')
-    plt.xlabel('Time [s]', fontsize=14, fontweight='bold')
-    plt.legend(loc='upper left', ncol=9, frameon=False)
-    
-    # 2.2 Velocity 
-    plt.figure('Velocity', figsize=(12, 6))
-    plt.step(df['time'], df['est_dx'], '-', linewidth=1.4, label='Est dx')
-    plt.step(df['time'], df['est_dy'], '-', linewidth=1.4, label='Est dy')
-    plt.step(df['time'], df['est_dz'], '-', linewidth=1.4, label='Est dz')
-    plt.plot(df['time'], df['dx'], '-', linewidth=2.0, label='Real dx')
-    plt.plot(df['time'], df['dy'], '-', linewidth=2.0, label='Real dy')
-    plt.plot(df['time'], df['dz'], '-', linewidth=2.0, label='Real dz')
-    plt.grid(True)
-    plt.ylabel('Velocity [m/s]')
-    plt.xlabel('Time [s]')
-    plt.title('Velocity (dx, dy, dz)')
-    plt.legend(loc='upper left', ncol=2, frameon=False)
-
-    # 2.3 Attitude 
-    plt.figure('Attitude Tracking', figsize=(12, 6))
-    plt.step(df['time'], df['ref_phi'], '-', linewidth=1.2, label=r'Ref $\phi$')
-    plt.step(df['time'], df['ref_theta'], '-', linewidth=1.2, label=r'Ref $\theta$')
-    plt.step(df['time'], df['ref_psi'], '-', linewidth=1.2, label=r'Ref $\psi$')
-    plt.step(df['time'], df['est_phi'], '-', linewidth=1.4, label=r'Est $\phi$')
-    plt.step(df['time'], df['est_theta'], '-', linewidth=1.4, label=r'Est $\theta$')
-    plt.step(df['time'], df['est_psi'], '-', linewidth=1.4, label=r'Est $\psi$')
-    plt.plot(df['time'], df['phi'], '-', linewidth=2.0, label=r'Real $\phi$')
-    plt.plot(df['time'], df['theta'], '-', linewidth=2.0, label=r'Real $\theta$')
-    plt.plot(df['time'], df['psi'], '-', linewidth=2.0, label=r'Real $\psi$')
-    plt.grid(True)
-    plt.ylabel('Attitude [rad]')
-    plt.xlabel('Time [s]')
-    plt.title(r'Attitude Tracking ($\phi$, $\theta$, $\psi$)')
-    plt.legend(loc='upper left', ncol=3, frameon=False)
-
-    # 2.4 Angular Rates 
-    plt.figure('Angular Rates', figsize=(12, 6))
-    plt.step(df['time'], df['est_p'], '-', linewidth=1.4, label='Est p')
-    plt.step(df['time'], df['est_q'], '-', linewidth=1.4, label='Est q')
-    plt.step(df['time'], df['est_r'], '-', linewidth=1.4, label='Est r')
-    plt.plot(df['time'], df['p'], '-', linewidth=2.0, label='Real p')
-    plt.plot(df['time'], df['q'], '-', linewidth=2.0, label='Real q')
-    plt.plot(df['time'], df['r'], '-', linewidth=2.0, label='Real r')
-    plt.grid(True)
-    plt.ylabel('Angular Rate [rad/s]')
-    plt.xlabel('Time [s]')
-    plt.title('Angular Rates (p, q, r)')
-    plt.legend(loc='upper left', ncol=2, frameon=False)
-
-    # 2.5 Thrust 
-    plt.figure('Thrust', figsize=(12, 6))
-    plt.step(df['time'], df['cmd_T'], '-', linewidth=1.4, label='Cmd T')
-    plt.plot(df['time'], df['real_T'], '-', linewidth=2.0, label='Real T_m (Motors)')
-    plt.grid(True)
-    plt.ylabel('Thrust [N]')
-    plt.xlabel('Time [s]')
-    plt.title('Thrust: Commanded vs Real (T vs T_m)')
-    plt.legend(loc='upper left', frameon=False)
-
-    # 2.6 Control Torques 
-    plt.figure('Control Torques', figsize=(12, 6))
-    plt.step(df['time'], df['cmd_tau_phi'], '-', linewidth=1.4, label=r'$\tau_{\phi}$ cmd')
-    plt.step(df['time'], df['cmd_tau_theta'], '-', linewidth=1.4, label=r'$\tau_{\theta}$ cmd')
-    plt.step(df['time'], df['cmd_tau_psi'], '-', linewidth=1.4, label=r'$\tau_{\psi}$ cmd')
-    plt.plot(df['time'], df['real_tau_phi'], '-', linewidth=2.0, label=r'$\tau_{\phi}$ real')
-    plt.plot(df['time'], df['real_tau_theta'], '-', linewidth=2.0, label=r'$\tau_{\theta}$ real')
-    plt.plot(df['time'], df['real_tau_psi'], '-', linewidth=2.0, label=r'$\tau_{\psi}$ real')
-    plt.grid(True)
-    plt.ylabel('Torque [N.m]')
-    plt.xlabel('Time [s]')
-    plt.title(r'Control Torques: Commanded vs Real ($\tau$ vs $\tau_m$)')
-    plt.legend(loc='upper left', ncol=2, frameon=False)
-
     plt.show()
-
-if __name__ == '__main__':
-    plot_sim_results()
